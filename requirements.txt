@@ -3,6 +3,8 @@ pandas
 numpy
 pymongo[srv]==3.6
 pymongo
-cirtifi 
+certifi
+scikit-learn
+
 
 #-e .
