@@ -1,6 +1,0 @@
-[ 2025-01-21 22:13:30,493 ] 16 root - INFO - Initiating data ingestion process...
-[ 2025-01-21 22:13:37,274 ] 68 root - INFO - Performed train-test split on the DataFrame.
-[ 2025-01-21 22:13:37,276 ] 73 root - INFO - Exporting train and test file paths.
-[ 2025-01-21 22:13:37,404 ] 82 root - INFO - Exported train and test file paths.
-[ 2025-01-21 22:13:37,406 ] 18 root - INFO - Data Ingestion Completed
-[ 2025-01-21 22:13:37,407 ] 30 root - ERROR - An error occurred: Error occurred in Python script name [C:\Users\suman\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_validation.py] line number [19] error message[Error occurred in Python script name [C:\Users\suman\OneDrive\Desktop\NetworkSecurity\networksecurity\utils\main_utils\utils.py] line number [11] error message[[Errno 2] No such file or directory: 'data_schema\\svhema.yaml']]
