@@ -19,19 +19,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Lint code
-        run: |
-          # Replace these with your actual linting commands
-          # Example using flake8 for Python:
-          pip install flake8
-          flake8 .
+      - name: Set up Python # Assuming your project uses Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11' # Specify your desired Python version (e.g., 3.9)
 
-      - name: Run unit tests
+      - name: Install dependencies
         run: |
-          # Replace these with your actual unit testing commands
-          # Example using pytest for Python:
-          pip install pytest
-          pytest
+          python -m pip install --upgrade pip
+          pip install flake8 pytest # Add any other dependencies here
+
+      - name: Lint with flake8
+        run: |
+          # Customize flake8 options as needed for your project
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test with pytest
+        run: |
+          pytest # Add any pytest options if needed
 
   build-and-push-ecr-image:
     name: Continuous Delivery
