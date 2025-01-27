@@ -188,7 +188,7 @@ NetworkSecurity/
 ├── data_schema/             # Schema definition
 ├── notebook/                # Jupyter notebooks
 ├── requirements.txt         # Dependencies
-├── src/                     # Source code
+├── networksecurity/         #folder
 │   ├── components/          # Pipeline components
 │   ├── config/             # Configurations
 │   ├── constant/           # Constants
