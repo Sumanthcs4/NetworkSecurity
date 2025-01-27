@@ -1,168 +1,254 @@
-# Network Security Project
 
-A **Machine Learning** project for network security analysis, leveraging **Docker**, **AWS (S3 & EC2)**, and **DAGsHub** for MLOps. This project includes automated workflows, data ingestion, model training, and deployment pipelines.
+# Network Security Analysis with Machine Learning
 
----
-
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Technologies Used](#technologies-used)
-- [Features](#features)
-- [Feature Names](#feature-names)
-- [Project Structure](#project-structure)
-- [Setup Instructions](#setup-instructions)
-  - [Clone the Repository](#1-clone-the-repository)
-  - [Setup Environment](#2-setup-environment)
-  - [Run the Project](#3-run-the-project)
-- [Docker Integration](#docker-integration)
-- [AWS Deployment](#aws-deployment)
-  - [S3 Integration](#s3-integration)
-  - [EC2 Deployment](#ec2-deployment)
-- [Logging and Tracking](#logging-and-tracking)
-- [Future Enhancements](#future-enhancements)
-- [Contributing](#contributing)
-- [License](#license)
-
----
+[![CI/CD](https://github.com/Sumanthcs4/NetworkSecurity/actions/workflows/workflow.yml/badge.svg)](https://github.com/Sumanthcs4/NetworkSecurity/actions/workflows/workflow.yml)
 
 ## Project Overview
-This project analyzes and improves network security using machine learning techniques. It includes data ingestion, validation, transformation, model training, and evaluation. The results are tracked and logged using **MLflow** on **DAGsHub**.
+
+This project focuses on analyzing and improving network security using machine learning techniques. It includes a complete pipeline that covers data ingestion from a MongoDB database, data validation, data transformation, model training, evaluation, and deployment using Docker and AWS. The project leverages DAGsHub for MLOps, providing experiment tracking, model versioning, and data versioning.
+
+The machine learning model used in this project is a **Random Forest Classifier**, which has demonstrated high performance in classifying network traffic as benign or malicious based on various network features.
+
+## Project Architecture
+
+The following diagram illustrates the overall architecture of the project:
+
+```mermaid
+graph TD
+    subgraph "Data Ingestion"
+        A[MongoDB Database] --> B(Data Ingestion Component);
+        B --> C{Train/Test Split};
+    end
+    subgraph "Data Validation"
+        C --> D(Data Validation Component);
+        D --> E{Validation Checks};
+        E -- Pass --> F[Data Validation Artifact];
+        E -- Fail --> G[Validation Error];
+    end
+    subgraph "Data Transformation"
+        F --> H(Data Transformation Component);
+        H --> I[KNN Imputer];
+        I --> J[Transformed Data Artifact];
+    end
+    subgraph "Model Training"
+        J --> K(Model Trainer Component);
+        K --> L[Random Forest Model];
+        K --> M[Model Trainer Artifact];
+    end
+    subgraph "Model Evaluation"
+        M --> N(Model Evaluation Component);
+        N --> O{Performance Metrics};
+    end
+    subgraph "Deployment"
+        O -- Pass Threshold --> P(Model Pusher Component);
+        P --> Q[AWS S3];
+        Q --> R[Docker Image in ECR];
+        R --> S[FastAPI on EC2];
+        O -- Fail Threshold --> T[Do Not Deploy];
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#ccf,stroke:#333,stroke-width:2px
+    style C fill:#ffccff,stroke:#333,stroke-width:2px
+    style D fill:#ccf,stroke:#333,stroke-width:2px
+    style E fill:#ffccff,stroke:#333,stroke-width:2px
+    style F fill:#ccffcc,stroke:#333,stroke-width:2px
+    style G fill:#f00,stroke:#333,stroke-width:2px
+    style H fill:#ccf,stroke:#333,stroke-width:2px
+    style I fill:#ccf,stroke:#333,stroke-width:2px
+    style J fill:#ccffcc,stroke:#333,stroke-width:2px
+    style K fill:#ccf,stroke:#333,stroke-width:2px
+    style L fill:#f9f,stroke:#333,stroke-width:2px
+    style M fill:#ccffcc,stroke:#333,stroke-width:2px
+    style N fill:#ccf,stroke:#333,stroke-width:2px
+    style O fill:#ffccff,stroke:#333,stroke-width:2px
+    style P fill:#ccf,stroke:#333,stroke-width:2px
+    style Q fill:#ccffcc,stroke:#333,stroke-width:2px
+    style R fill:#ccffcc,stroke:#333,stroke-width:2px
+    style S fill:#f9f,stroke:#333,stroke-width:2px
+    style T fill:#ccc,stroke:#333,stroke-width:2px
+```
+
+## Detailed Stage Diagrams:
+
+### Data Validation:
+```mermaid
+graph TD
+    A[Data Ingestion Artifact] --> B(Data Validation Config);
+    B --> C{Initiate Data Validation};
+    C --> D[Read Data: train.csv, test.csv];
+    D --> E{Schema Check};
+    D --> F{Validate Number of Columns};
+    D --> G{Is Numerical Columns Exist};
+    D --> H{Data Drift Check}
+    E -- Status: False --> M[Validation Error];
+    F -- Status: False --> M;
+    G -- Status: False --> M;
+    H -- Status: False --> M;
+    E -- Status: True --> I{Detect Dataset Drift};
+    F -- Status: True --> I;
+    G -- Status: True --> I;
+    H -- Status: True --> I;
+    I --> J[Data Validation Artifact];
+    style M fill:#f00,stroke:#333,stroke-width:2px
+```
+
+### Data Transformation:
+```mermaid
+graph TD
+    A[Data Validation Artifact] --> B(Data Transformation Config);
+    B --> C{Initiate Data Transformation};
+    C --> D[Read Data: train.csv, test.csv];
+    D --> E[Training Dataframe: Drop Target Column];
+    E --> F[Testing Dataframe: Drop Target Column];
+    F --> G{Target Variable Mapping: -1 to 0};
+    G --> H[Get Data Transformer Object: KNNImputer];
+    H --> I[Fit preprocessor object on training data];
+    I --> J[Transform training and testing data];
+    J --> K[Create train and test array];
+    K --> L[Save train.npy and test.npy];
+    L --> M[Save preprocessor object: preprocessing.pkl];
+    M --> N[Data Transformation Artifact];
+```
+
+### Model Training:
+```mermaid
+graph TD
+    A[Data Transformation Artifact] --> B(Model Trainer Config);
+    B --> C{Initiate Model Trainer};
+    C --> D[Load train.npy and test.npy];
+    D --> E[Split into X_train, y_train, X_test, y_test];
+    E --> F{Train Model};
+    F --> G[Evaluate Models using evaluate_models function];
+    G --> H{Find best model and best score};
+    H --> I[Predict on training data];
+    I --> J[Calculate training metrics];
+    J --> K[Predict on testing data];
+    K --> L[Calculate testing metrics];
+    L --> M[Log metrics and model to MLflow];
+    M --> N[Save NetworkModel object];
+    N --> O[Save best model to final_model/model.pkl];
+    O --> P[Model Trainer Artifact];
+```
+
+### Deployment:
+```mermaid
+graph TD
+    A[Push to Main Branch] --> B{GitHub Actions Trigger};
+    B --> C[CI: Linting, Unit Tests];
+    C --> D{CD: Build & Push Docker Image};
+    D --> E[Configure AWS Credentials];
+    E --> F[Login to ECR];
+    F --> G[Build, Tag, Push Image to ECR];
+    G --> H{CD: Deploy to EC2 (Self-Hosted Runner)};
+    H --> I[Configure AWS Credentials];
+    I --> J[Login to ECR];
+    J --> K[Pull Latest Image];
+    K --> L[Stop & Remove Existing Container];
+    L --> M[Run New Container: map port 8080, set env vars];
+    M --> N[Clean Old Images & Containers];
+```
 
 ## Technologies Used
-- **Programming Language:** Python 3.8+
-- **Machine Learning:** scikit-learn, pandas, numpy
-- **MLOps Tools:** DAGsHub, MLflow
-- **Deployment:** Docker, AWS (S3 & EC2)
-- **Orchestration:** GitHub Actions
-- **Logging:** Python Logging
-- **Database:** MongoDB Atlas
+- **Programming Language:** Python 3.10
+- **Machine Learning:** scikit-learn (RandomForestClassifier, KNNImputer), pandas, numpy
+- **Data Storage:** MongoDB Atlas (for raw data), AWS S3 (for artifacts and model)
+- **MLOps:** DAGsHub, MLflow
+- **Deployment:** Docker, AWS EC2, GitHub Actions
+- **Web Framework:** FastAPI, Uvicorn
+- **Data Validation:** Evidently
+- **Other Tools:** awscli
 
 ## Features
-- **Data Ingestion:** Automated data ingestion pipeline with train-test split.
-- **Data Validation:** Ensures data integrity (e.g., column count and schema).
-- **Data Transformation:** Implements preprocessing steps using `KNNImputer`.
-- **Model Training:** Trains classification models and evaluates metrics.
-- **Artifact Storage:** Stores artifacts (e.g., models and datasets) in S3.
-- **Tracking:** Logs metrics and artifacts to MLflow via DAGsHub.
-- **Deployment:** Dockerized application deployed on AWS EC2.
+- **Data Ingestion:** Automated data ingestion from a MongoDB database with train-test split.
+- **Data Validation:** Comprehensive data validation checks, including schema validation, column number validation, numerical column existence check, datatype check, and data drift detection using the evidently library.
+- **Data Transformation:** Data preprocessing using a KNNImputer to handle missing values and target variable mapping.
+- **Model Training:** Training and evaluation of a Random Forest Classifier.
+- **Experiment Tracking:** Integration with MLflow (via DAGsHub) to track experiments, log metrics (F1-score, precision, recall), and log the trained model.
+- **Model Deployment:** Dockerized application deployed on AWS EC2 using a self-hosted GitHub Actions runner.
+- **CI/CD:** Automated CI/CD pipeline using GitHub Actions for linting, testing, building, pushing the Docker image to Amazon ECR, and deploying to EC2.
+- **Artifact Storage:** Stores artifacts (datasets, preprocessor, trained model) in an AWS S3 bucket.
+- **Web API:** REST API built with FastAPI to serve predictions.
 
-## Feature Names
-The dataset used in this project contains the following features:
-- **Duration:** Duration of the connection (in seconds).
-- **Protocol_Type:** Type of protocol (e.g., TCP, UDP, ICMP).
-- **Service:** Network service on the destination (e.g., HTTP, FTP).
-- **Flag:** Status of the connection (e.g., SF, REJ).
-- **Src_Bytes:** Number of data bytes from the source to the destination.
-- **Dst_Bytes:** Number of data bytes from the destination to the source.
-- **Land:** 1 if connection is from/to the same host/port; 0 otherwise.
-- **Wrong_Fragment:** Number of wrong fragments.
-- **Urgent:** Number of urgent packets.
-- **Hot:** Number of hot indicators.
-- **Count:** Number of connections to the same host in the past 2 seconds.
-- **Srv_Count:** Number of connections to the same service in the past 2 seconds.
-- **Other features:** Additional derived or technical metrics related to network traffic.
+## Dataset
+The dataset used in this project is stored in a MongoDB database. The schema of the data is defined in `data_schema/schema.yaml`. The dataset contains the following features (all numeric):
 
-## Project Structure
+```yaml
+columns:
+  - having_IPhaving_IP_Address: numeric
+  - URLURL_Length: numeric
+  - Shortining_Service: numeric
+  - having_At_Symbol: numeric
+  - double_slash_redirecting: numeric
+  - Prefix_Suffix: numeric
+  - having_Sub_Domain: numeric
+  - SSLfinal_State: numeric
+  - Domain_registeration_length: numeric
+  - Favicon: numeric
+  - port: numeric
+  - HTTPS_token: numeric
+  - Request_URL: numeric
+  - URL_of_Anchor: numeric
+  - Links_in_tags: numeric
+  - SFH: numeric
+  - Submitting_to_email: numeric
+  - Abnormal_URL: numeric
+  - Redirect: numeric
+  - on_mouseover: numeric
+  - RightClick: numeric
+  - popUpWidnow: numeric
+  - Iframe: numeric
+  - age_of_domain: numeric
+  - DNSRecord: numeric
+  - web_traffic: numeric
+  - Page_Rank: numeric
+  - Google_Index: numeric
+  - Links_pointing_to_page: numeric
+  - Statistical_report: numeric
+  - Result: numeric
+
+target_column: Result
 ```
-networksecurity/
-├── src/                  # Source code for the project
-├── artifacts/            # Generated artifacts (models, data splits, etc.)
-├── docker/               # Docker configuration files
-├── configs/              # Configuration files for the pipeline
-├── notebooks/            # Jupyter Notebooks for analysis
-├── .github/              # GitHub Actions for CI/CD
-├── README.md             # Project documentation
-└── requirements.txt      # Python dependencies
-```
-
-## Setup Instructions
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/Sumanthcs4/NetworkSecurity.git
-cd NetworkSecurity
-```
-
-### 2. Setup Environment
-- Install dependencies using `requirements.txt`:
-  ```bash
-  pip install -r requirements.txt
-  ```
-- Configure environment variables in a `.env` file:
-  ```env
-  MONGO_DB_URL="mongodb+srv://<username>:<password>@cluster0.sszo2.mongodb.net/?retryWrites=true&w=majority"
-  AWS_ACCESS_KEY_ID="<your-access-key>"
-  AWS_SECRET_ACCESS_KEY="<your-secret-key>"
-  S3_BUCKET_NAME="<your-s3-bucket>"
-  ```
-
-### 3. Run the Project
-To start the project, execute the following command:
-```bash
-python app.py
-```
-
----
-
-## Docker Integration
-This project is containerized using Docker.
-
-### Steps to Run with Docker:
-1. Build the Docker image:
-   ```bash
-   docker build -t networksecurity:latest .
-   ```
-2. Run the Docker container:
-   ```bash
-   docker run -p 5000:5000 --env-file .env networksecurity:latest
-   ```
-
----
 
 ## AWS Deployment
 
-### S3 Integration
-- Artifacts (e.g., trained models, data splits) are automatically uploaded to an S3 bucket.
-- Configuration for S3 is managed via environment variables.
+The project is deployed on AWS EC2 using a self-hosted GitHub Actions runner. The CI/CD pipeline automates the following steps:
 
-### EC2 Deployment
-- The project is deployed on an AWS EC2 instance with Docker.
-- Steps to deploy:
-  1. SSH into your EC2 instance:
-     ```bash
-     ssh -i "your-key.pem" ec2-user@your-ec2-instance
-     ```
-  2. Clone the repository and navigate to the directory.
-  3. Build and run the Docker container as shown above.
+1.  **Continuous Integration:**
+    *   Performs linting on the codebase (currently a placeholder in the workflow).
+    *   Executes unit tests (currently a placeholder in the workflow).
 
----
+2.  **Continuous Delivery:**
+    *   Builds a Docker image containing the application and its dependencies.
+    *   Pushes the newly built Docker image to Amazon Elastic Container Registry (ECR).
 
-## Logging and Tracking
-- **MLflow:** Tracks metrics, parameters, and artifacts.
-- **DAGsHub:** Integrates MLflow tracking and repository management.
+3.  **Continuous Deployment:**
+    *   Connects to the EC2 instance (where the self-hosted GitHub Actions runner is configured).
+    *   Pulls the latest Docker image from the ECR repository.
+    *   Stops and removes any previously running Docker container named `networksecurity`.
+    *   Starts a new Docker container based on the pulled image, with the following configurations:
+        *   Names the container `networksecurity`.
+        *   Maps port 8080 on the EC2 instance to port 8080 inside the container, making the FastAPI application accessible.
+        *   Sets environment variables within the container to provide the application with necessary configurations like AWS credentials and the MongoDB connection string. These are sourced securely from GitHub Actions secrets.
+        *   Utilizes the host's inter-process communication (IPC) namespace (`--ipc="host"`).
+    *   Cleans up any old, unused Docker images and containers from the EC2 instance to free up space.
 
-Logs Example:
+**Deployment Diagram:**
+
+```mermaid
+graph TD
+    A[Push to Main Branch] --> B{GitHub Actions Trigger};
+    B --> C[CI: Linting, Unit Tests];
+    C --> D{CD: Build & Push Docker Image};
+    D --> E[Configure AWS Credentials];
+    E --> F[Login to ECR];
+    F --> G[Build, Tag, Push Image to ECR];
+    G --> H{CD: Deploy to EC2 (Self-Hosted Runner)};
+    H --> I[Configure AWS Credentials];
+    I --> J[Login to ECR];
+    J --> K[Pull Latest Image];
+    K --> L[Stop & Remove Existing Container];
+    L --> M[Run New Container: map port 8080, set env vars];
+    M --> N[Clean Old Images & Containers];
 ```
-[ 2025-01-27 11:06:02,293 ] INFO - HTTP Request: GET https://dagshub.com/api/v1/user "HTTP/1.1 200 OK"
-[ 2025-01-27 11:06:19,907 ] INFO - Data Ingestion completed and artifact saved.
-[ 2025-01-27 11:11:25,517 ] INFO - Model trainer artifact: ModelTrainerArtifact(...)
-```
-
----
-
-## Future Enhancements
-- Implement additional machine learning algorithms.
-- Add a web-based user interface.
-- Automate hyperparameter tuning.
-- Enhance logging and error handling.
-
----
-
-## Contributing
-Contributions are welcome! Please fork the repository and submit a pull request.
-
----
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
