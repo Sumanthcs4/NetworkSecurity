@@ -8,6 +8,7 @@ A **Machine Learning** project for network security analysis, leveraging **Docke
 - [Project Overview](#project-overview)
 - [Technologies Used](#technologies-used)
 - [Features](#features)
+- [Feature Names](#feature-names)
 - [Project Structure](#project-structure)
 - [Setup Instructions](#setup-instructions)
   - [Clone the Repository](#1-clone-the-repository)
@@ -45,14 +46,30 @@ This project analyzes and improves network security using machine learning techn
 - **Tracking:** Logs metrics and artifacts to MLflow via DAGsHub.
 - **Deployment:** Dockerized application deployed on AWS EC2.
 
+## Feature Names
+The dataset used in this project contains the following features:
+- **Duration:** Duration of the connection (in seconds).
+- **Protocol_Type:** Type of protocol (e.g., TCP, UDP, ICMP).
+- **Service:** Network service on the destination (e.g., HTTP, FTP).
+- **Flag:** Status of the connection (e.g., SF, REJ).
+- **Src_Bytes:** Number of data bytes from the source to the destination.
+- **Dst_Bytes:** Number of data bytes from the destination to the source.
+- **Land:** 1 if connection is from/to the same host/port; 0 otherwise.
+- **Wrong_Fragment:** Number of wrong fragments.
+- **Urgent:** Number of urgent packets.
+- **Hot:** Number of hot indicators.
+- **Count:** Number of connections to the same host in the past 2 seconds.
+- **Srv_Count:** Number of connections to the same service in the past 2 seconds.
+- **Other features:** Additional derived or technical metrics related to network traffic.
+
 ## Project Structure
 ```
 networksecurity/
-├── networksecurity/      # Source code for the project
+├── src/                  # Source code for the project
 ├── artifacts/            # Generated artifacts (models, data splits, etc.)
 ├── docker/               # Docker configuration files
 ├── configs/              # Configuration files for the pipeline
-├── app.py                # To run the app
+├── notebooks/            # Jupyter Notebooks for analysis
 ├── .github/              # GitHub Actions for CI/CD
 ├── README.md             # Project documentation
 └── requirements.txt      # Python dependencies
