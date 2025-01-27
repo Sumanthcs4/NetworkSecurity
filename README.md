@@ -48,11 +48,11 @@ This project analyzes and improves network security using machine learning techn
 ## Project Structure
 ```
 networksecurity/
-├── src/                  # Source code for the project
+├── networksecurity/      # Source code for the project
 ├── artifacts/            # Generated artifacts (models, data splits, etc.)
 ├── docker/               # Docker configuration files
 ├── configs/              # Configuration files for the pipeline
-├── notebooks/            # Jupyter Notebooks for analysis
+├── app.py                # To run the app
 ├── .github/              # GitHub Actions for CI/CD
 ├── README.md             # Project documentation
 └── requirements.txt      # Python dependencies
