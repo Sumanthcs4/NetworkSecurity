@@ -1,6 +1,9 @@
-# Network Security Analysis with Machine Learning
+# Network Security using Phishing Data
 
-[![CI/CD](https://github.com/Sumanthcs4/NetworkSecurity/actions/workflows/workflow.yml/badge.svg)](https://github.com/Sumanthcs4/NetworkSecurity/actions/workflows/workflow.yml)
+
+
+[![CI/CD](https://github.com/Sumanthcs4/NetworkSecurity/actions/workflows/main.yml/badge.svg)](https://github.com/Sumanthcs4/NetworkSecurity/actions/workflows/main.yml)
+
 
 ## Project Overview
 
